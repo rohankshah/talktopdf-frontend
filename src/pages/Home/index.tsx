@@ -1,12 +1,19 @@
 import { Upload } from 'lucide-react'
 import { Input } from '../../components/ui/input'
+import { postPdfToEmbed } from '../../api/postRequests'
 
 const Home = () => {
-	function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
+	async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0]
 		if (!file) {
 			console.log('error')
 			return
+		}
+		try {
+			await postPdfToEmbed(file)
+			console.log('success')
+		} catch (error) {
+			console.log(error)
 		}
 	}
 
