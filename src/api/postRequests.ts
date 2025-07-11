@@ -1,3 +1,4 @@
+import type { MessageType } from '../lib/types'
 import { getFullUrl, paths } from './contants'
 
 export async function postPdfToEmbed(file: File): Promise<any> {
@@ -17,4 +18,23 @@ export async function postPdfToEmbed(file: File): Promise<any> {
 	}
 
 	return await response.json()
+}
+
+export async function postNewMessage(messages: MessageType[]): Promise<any> {
+	const url = getFullUrl(paths.chat)
+
+	const response = await fetch(url, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(messages),
+	})
+
+	if (!response.ok) {
+		const errorText = await response.text()
+		throw new Error(`Failed to send new chat: ${response.status} - ${errorText}`)
+	}
+
+	return await response;
 }
