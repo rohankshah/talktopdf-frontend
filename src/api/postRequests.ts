@@ -36,5 +36,5 @@ export async function postNewMessage(messages: MessageType[]): Promise<any> {
 		throw new Error(`Failed to send new chat: ${response.status} - ${errorText}`)
 	}
 
-	return await response.json();
+	return await response;
 }

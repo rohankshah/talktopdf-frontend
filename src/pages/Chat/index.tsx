@@ -14,11 +14,34 @@ const Chat = () => {
 			content: currentMessage,
 		}
 		setMessages(prev => [...prev, newMessage])
-		setCurrentMessage("")
+		setCurrentMessage('')
 		try {
 			const response = await postNewMessage([...messages, newMessage])
-			const assistantMessageObj = response?.message
-			setMessages(prev => [...prev, assistantMessageObj])
+			const reader = response?.body?.getReader()
+			if (reader) {
+				const decoder = new TextDecoder()
+
+				async function pump({ done, value }: { done: boolean; value?: Uint8Array }) {
+					if (done) return
+
+					const text = decoder.decode(value, { stream: true })
+
+					setMessages(prev => {
+						let lastMessage = prev[prev.length - 1]
+						// For first chunk
+						if (lastMessage?.role === 'user') {
+							return [...prev, { role: 'assistant', content: text }]
+						}
+						// Subsequent chunks
+						const updatedText = lastMessage?.content + text
+						return [...prev.slice(0, -1), { ...lastMessage, content: updatedText }]
+					})
+
+					return reader.read().then(pump)
+				}
+
+				reader.read().then(pump)
+			}
 		} catch (error) {
 			console.log(error)
 		}
@@ -53,6 +76,12 @@ const Chat = () => {
 						placeholder="Type your message..."
 						value={currentMessage}
 						onChange={e => setCurrentMessage(e.target.value)}
+						onKeyDown={e => {
+							if (e.key === 'Enter' && !e.shiftKey) {
+								e.preventDefault()
+								handleSubmitMessage()
+							}
+						}}
 						className="flex-1 outline-none border-none bg-transparent text-gray-800 placeholder-gray-400"
 					/>
 					<div onClick={handleSubmitMessage} className="ml-3 text-gray-800 hover:text-black cursor-pointer">
